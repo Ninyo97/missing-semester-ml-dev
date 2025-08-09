@@ -52,7 +52,11 @@ TIPS:
 - There are many different ways of handling configs, using `hydra`, `OmegaConf` and more libraries.
 
 
+### Step 8: Reproduciblity
 
+- If you notice, all the runs have different loss values.
+- There are a bunch of reasons for this such as model initialization, random batch shuffling, randomness involved in loss computation algorithms and so on.
+- Reproducibility is generally achieved through seeding all the random number generators.
 
 
 
