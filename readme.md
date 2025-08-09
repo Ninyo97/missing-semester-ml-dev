@@ -59,7 +59,16 @@ TIPS:
 - Reproducibility is generally achieved through seeding all the random number generators.
 
 
+### Step 9: Logging
 
+- Let us now introduce logging.
+- Logging is more than just printing messages on the console. A log of an experiment specifies all the details of the experiment such that an experiment can be exactly tracked uing the log.
+
+TIPS:
+1. Log files are generally timestamped.
+2. It is a good idea to mention all the configs at the start of the log file.
+3. Some people print the model architecture in the log.
+4. Log epochwise parameters in the log.
 
 
 
