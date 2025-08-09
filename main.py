@@ -3,6 +3,7 @@ import torch.nn as nn
 import torchvision
 from torch.utils.data import Dataset, DataLoader
 import os
+from tqdm import tqdm
 
 os.makedirs('./MNIST', exist_ok=True)
 
@@ -55,3 +56,24 @@ class MLP(torch.nn.Module):
 
 
 model = MLP(in_features=784, out_features=10)
+
+
+
+def train(m, dl, max_epochs):
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(params=model.parameters(), lr=1e-3)
+    for epoch in range(max_epochs):
+        epoch_loss = []
+        for batch in tqdm(dl):
+            optimizer.zero_grad()
+            x, y = batch
+            preds = m(x)
+            loss = criterion(preds, y)
+            epoch_loss.append(loss.item())
+            loss.backward()
+            optimizer.step()
+        print(f"Epoch Loss: {torch.mean(torch.Tensor(epoch_loss))}")
+
+    return m
+
+trained_model = train(model, traindl, 5)
