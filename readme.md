@@ -30,3 +30,33 @@ _Honorable mentions_: `criterion`, `optimizer` and `loss.backwards`.
 
 - The model is evaluated on the test set at the end of training run.
 - The performance of the model is evaluated based on a metric, typically different from the loss.
+
+### Step 6: Refactor code
+
+Time to move code around and give our project directory some structure.
+
+Let us move the model to a `/models` folder. Also, we will move the dataset loading code to `datasets.py`. The reasons for these changes are for maintaining the code better. When we want to add a new model, we can just add a new file in the `/models` folder. Similarly, if we want to add a new dataset, we can just add a new function in `datasets.py`.
+
+
+TIPS:
+1. Use relative directory address.
+2. Keep as little entry points as possible and keep all entry points in the same folder.
+3. Let me stress point 2 by showing that the addresses `./MNIST/train` and `./MNIST/test` will work even if I mode the `datasets.py` to a subfolder `dataset`. This is because the entry point is from the root of the project directory.
+4. `__init__.py` is a file that tells Python that the folder is a package. It can be empty, but it is required for Python to recognize the folder as a package. If you create a `__init__.py` file, then you can even write `import models`, for example. This is not necessary.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
