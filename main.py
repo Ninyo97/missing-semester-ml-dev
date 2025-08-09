@@ -1,5 +1,5 @@
 import torchvision
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import os
 
 os.makedirs('./MNIST', exist_ok=True)
@@ -19,3 +19,8 @@ testset = torchvision.datasets.MNIST(root='./MNIST/test', train=False, download=
 
 print('Datasets are loaded!')
 print(isinstance(trainset, Dataset))
+
+
+
+traindl = DataLoader(dataset=trainset, batch_size=1, shuffle=True)
+testdl = DataLoader(dataset=testset, batch_size=1, shuffle=False)

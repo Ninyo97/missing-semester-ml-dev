@@ -6,4 +6,6 @@
 
 Dataset: A collection of samples $\{(x_i, y_i)\}$.
 
+### Step 2: torch.utils.data.Dataloader
 
+The Dataloader handles batching and dataset shuffling. A dataset is wrapped with a dataloader object.
