@@ -4,6 +4,9 @@ import torchvision
 from torch.utils.data import Dataset, DataLoader
 import os
 from tqdm import tqdm
+import numpy as np
+
+from sklearn.metrics import accuracy_score
 
 os.makedirs('./MNIST', exist_ok=True)
 
@@ -76,4 +79,20 @@ def train(m, dl, max_epochs):
 
     return m
 
+
+def test(m, dl):
+    predictions = []
+    y_true = []
+    for batch in tqdm(dl):
+        x, y = batch
+        preds = torch.argmax(m(x), dim=1)
+        predictions.append(preds)
+        y_true.append(y)
+
+    return accuracy_score(y_true=np.array(y_true), y_pred=np.array(predictions))
+    
+
 trained_model = train(model, traindl, 5)
+acc = test(trained_model, testdl)
+
+print(f'Test Accuracy after training 5 epochs: {acc}')

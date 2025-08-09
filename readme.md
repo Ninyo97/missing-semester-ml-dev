@@ -25,3 +25,8 @@ The train pipeline in it's most barebones form is a for loop over epochs.
 - `Batch`: A small subset of the training data, fed to the model in parallel is a batch.
 
 _Honorable mentions_: `criterion`, `optimizer` and `loss.backwards`.
+
+### Step 5: Evaluation Pipeline
+
+- The model is evaluated on the test set at the end of training run.
+- The performance of the model is evaluated based on a metric, typically different from the loss.
