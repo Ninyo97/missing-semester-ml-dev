@@ -45,6 +45,12 @@ TIPS:
 4. `__init__.py` is a file that tells Python that the folder is a package. It can be empty, but it is required for Python to recognize the folder as a package. If you create a `__init__.py` file, then you can even write `import models`, for example. This is not necessary.
 
 
+### Step 7: Configs
+
+- Configs parsing is a generally large refactor. Function definitions change, variables get introduced. One needs to be careful about config parsing but it hugely increases the usability of the code.
+- Currently, we have added a few training arguments for config parsing.
+- There are many different ways of handling configs, using `hydra`, `OmegaConf` and more libraries.
+
 
 
 

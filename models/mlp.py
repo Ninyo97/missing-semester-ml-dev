@@ -2,14 +2,14 @@ import torch
 import torch.nn as nn
 
 class MLP(torch.nn.Module):
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, hidden_features, out_features):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
 
-        self.fc1 = nn.Linear(in_features=self.in_features, out_features=50)
+        self.fc1 = nn.Linear(in_features=self.in_features, out_features=hidden_features)
         self.activation = nn.ReLU()
-        self.fc2 = nn.Linear(in_features=50, out_features=out_features)
+        self.fc2 = nn.Linear(in_features=hidden_features, out_features=out_features)
 
     def forward(self, x):
         '''
