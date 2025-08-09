@@ -71,7 +71,12 @@ TIPS:
 4. Log epochwise parameters in the log.
 
 
+### Step 10: Model Checkpointing
 
+- Storing the final model is important for future use.
+- This process is also known as checkpointing. 
+- Storing a model can be arbitrarily complex. One can store the model weights, the optimizer state, num_epochs and other metadata.
+- We will simply store the model weights and the configurations. These weights can be used in future to load the model and use for deployment or finetune.
 
 
 

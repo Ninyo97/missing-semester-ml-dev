@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 import logging
 import os
+import json
 from datetime import datetime
 
 from models.mlp import MLP
@@ -33,6 +34,63 @@ def setup_logging(log_level='INFO'):
     return logger, log_dir
 
 
+def save_model_checkpoint(model, args, accuracy, log_dir, timestamp, logger=None):
+    checkpoint_dir = os.path.join(log_dir, "checkpoints")
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    model_filename = f"mlp_h{args.hidden_features}_{timestamp}.pth"
+    config_filename = f"config_h{args.hidden_features}_{timestamp}.json"
+    
+    model_path = os.path.join(checkpoint_dir, model_filename)
+    config_path = os.path.join(checkpoint_dir, config_filename)
+    
+    logger.info(f"Saving model checkpoint to: {model_path}")
+    checkpoint = {
+        'model_state_dict': model.state_dict(),
+        'model_architecture': {
+            'in_features': 784,
+            'hidden_features': args.hidden_features,
+            'out_features': 10
+        },
+        'training_config': vars(args),
+        'final_accuracy': accuracy,
+        'timestamp': timestamp,
+        'total_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad)
+    }
+    
+    torch.save(checkpoint, model_path)
+    logger.info(f"Model checkpoint saved successfully")
+    
+    # Save configuration as JSON
+    logger.info(f"Saving configuration to: {config_path}")
+    config_data = {
+        'training_configuration': vars(args),
+        'model_architecture': {
+            'type': 'MLP',
+            'in_features': 784,
+            'hidden_features': args.hidden_features,
+            'out_features': 10,
+            'total_parameters': sum(p.numel() for p in model.parameters() if p.requires_grad)
+        },
+        'training_results': {
+            'final_accuracy': accuracy,
+            'epochs_trained': args.epochs
+        },
+        'metadata': {
+            'timestamp': timestamp,
+            'model_file': model_filename,
+            'log_directory': log_dir
+        }
+    }
+    
+    with open(config_path, 'w') as f:
+        json.dump(config_data, f, indent=4, default=str)
+    
+    logger.info(f"Configuration saved successfully")
+    
+    return model_path, config_path
+
+
 def parse_arguments():
     """Parse command line arguments for training configuration."""
     parser = argparse.ArgumentParser(description='Train MLP on MNIST dataset')
@@ -54,6 +112,12 @@ def parse_arguments():
     parser.add_argument('--log-level', type=str, default='INFO',
                         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                         help='Logging level (default: INFO)')
+    
+    # Checkpointing arguments
+    parser.add_argument('--save-checkpoint', action='store_true',
+                        help='Save model checkpoint after training')
+    parser.add_argument('--load-checkpoint', type=str, default=None,
+                        help='Path to checkpoint file to load and evaluate')
     
     return parser.parse_args()
 
@@ -132,12 +196,15 @@ def main():
     
     logger, log_dir = setup_logging(args.log_level)
     
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
     logger.info("=" * 60)
     logger.info("MNIST MLP Training Started")
     logger.info("=" * 60)
     
     logger.info(f"Configuration: {vars(args)}")
     logger.info(f"Log directory: {log_dir}")
+    logger.info(f"Timestamp: {timestamp}")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
@@ -166,6 +233,14 @@ def main():
     logger.info("=" * 60)
     print(result_msg)
     
+    logger.info("Saving model checkpoint...")
+    model_path, config_path = save_model_checkpoint(
+        trained_model, args, acc, log_dir, timestamp, logger
+    )
+
+    print(f"Model checkpoint saved to: {model_path}")
+    print(f"Configuration saved to: {config_path}")
+    
     model_info_path = os.path.join(log_dir, 'model_info.txt')
     with open(model_info_path, 'w') as f:
         f.write(f"Model Architecture: MLP\n")
@@ -174,6 +249,7 @@ def main():
         f.write(f"Output Features: 10\n")
         f.write(f"Final Test Accuracy: {acc:.4f}\n")
         f.write(f"Training Configuration: {vars(args)}\n")
+        f.write(f"Timestamp: {timestamp}\n")
     
     logger.info(f"Model information saved to: {model_info_path}")
     
