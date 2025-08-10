@@ -79,8 +79,10 @@ TIPS:
 - We will simply store the model weights and the configurations. These weights can be used in future to load the model and use for deployment or finetune.
 
 
+### Step 11: Early Stopping
 
-
-
-
+- The last model, i.e. the model obtained after the final epoch, is often not the best model.
+- It can be overfit, and may have a worse performance on the test set even though it has lower training error.
+- To implement early stopping, we must have a validation set that we can test the model performance against.
+- Moreover, the training might converge well before the `max_epochs` value. We can implement early stopping in this case. 
 

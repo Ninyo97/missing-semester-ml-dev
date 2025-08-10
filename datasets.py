@@ -1,5 +1,5 @@
 import torchvision
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 import os
 
 
@@ -11,12 +11,16 @@ def load_mnist_datasets(batch_size_train=1, batch_size_test=1, shuffle_train=Tru
         torchvision.transforms.Normalize(mean=(0.5,), std=(0.5,))
     ])
     
-    trainset = torchvision.datasets.MNIST(
+    trainset_full = torchvision.datasets.MNIST(
         root='./MNIST/train', 
         train=True, 
         download=True, 
         transform=transform
     )
+    train_size = int(0.8 * len(trainset_full))
+    val_size = len(trainset_full) - train_size
+    trainset, valset = random_split(trainset_full, [train_size, val_size])
+
     testset = torchvision.datasets.MNIST(
         root='./MNIST/test', 
         train=False, 
@@ -29,6 +33,11 @@ def load_mnist_datasets(batch_size_train=1, batch_size_test=1, shuffle_train=Tru
         batch_size=batch_size_train, 
         shuffle=shuffle_train
     )
+    valdl = DataLoader(
+        dataset=valset,
+        batch_size=batch_size_train,
+        shuffle=shuffle_train
+    )
     testdl = DataLoader(
         dataset=testset, 
         batch_size=batch_size_test, 
@@ -37,4 +46,4 @@ def load_mnist_datasets(batch_size_train=1, batch_size_test=1, shuffle_train=Tru
     
     print('Datasets are loaded!')
     
-    return traindl, testdl, trainset, testset
+    return traindl, valdl, testdl, trainset, valset, testset

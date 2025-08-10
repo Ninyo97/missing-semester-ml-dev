@@ -12,6 +12,7 @@ from models.mlp import MLP
 from datasets import load_mnist_datasets
 
 from sklearn.metrics import accuracy_score
+import copy
 
 
 def setup_logging(log_level='INFO'):
@@ -20,6 +21,7 @@ def setup_logging(log_level='INFO'):
     os.makedirs(log_dir, exist_ok=True)
 
     logger = logging.getLogger('mnist_training')
+    logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
 
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
@@ -31,8 +33,7 @@ def setup_logging(log_level='INFO'):
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
-    return logger, log_dir
-
+    return logger, log_dir, timestamp
 
 def save_model_checkpoint(model, args, accuracy, log_dir, timestamp, logger=None):
     checkpoint_dir = os.path.join(log_dir, "checkpoints")
@@ -90,7 +91,6 @@ def save_model_checkpoint(model, args, accuracy, log_dir, timestamp, logger=None
     
     return model_path, config_path
 
-
 def parse_arguments():
     """Parse command line arguments for training configuration."""
     parser = argparse.ArgumentParser(description='Train MLP on MNIST dataset')
@@ -121,9 +121,9 @@ def parse_arguments():
     
     return parser.parse_args()
 
-def train(m, dl, max_epochs, lr, device, logger=None):
-    if logger is None:
-        logger = logging.getLogger('mnist_training')
+def train(m, dl, device, args, logger, log_dir=None, timestamp=None):
+    max_epochs = args.epochs
+    lr = args.lr
     
     logger.info(f"Starting training for {max_epochs} epochs with lr={lr}")
     logger.debug(f"Using device: {device}")
@@ -134,6 +134,9 @@ def train(m, dl, max_epochs, lr, device, logger=None):
     m.to(device)
     logger.debug("Model moved to device")
     
+    best_val_acc = 0.0
+    best_model = None
+
     for epoch in range(max_epochs):
         epoch_loss = []
         logger.debug(f"Starting epoch {epoch+1}/{max_epochs}")
@@ -156,16 +159,43 @@ def train(m, dl, max_epochs, lr, device, logger=None):
         logger.info(f"Epoch {epoch+1}/{max_epochs} completed - Average Loss: {avg_loss:.4f}")
         print(f"Epoch {epoch+1} Loss: {avg_loss:.4f}")
 
+        if (epoch + 1) % 2 == 0:
+            val_acc = val(m, dl, device, logger)
+            logger.info(f"Validation Accuracy after epoch {epoch+1}: {val_acc:.4f}")
+
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                best_model = copy.deepcopy(m)
+                save_model_checkpoint(
+                    best_model, args, val_acc, log_dir, timestamp, logger
+                )
+                logger.info(f"New best validation accuracy: {best_val_acc:.4f} - Model checkpoint saved")
+
     logger.info("Training completed successfully")
-    return m
+    return best_model
 
-
-def test(m, dl, device, logger=None):
-    if logger is None:
-        logger = logging.getLogger('mnist_training')
+def val(m, dl, device, logger=None):
+    logger.info("Starting model validation")
     
+    predictions = []
+    y_true = []
+    
+    m.eval()    
+    with torch.no_grad():
+        for batch_idx, batch in enumerate(tqdm(dl, desc='Validating')):
+            x, y = batch
+            x, y = x.to(device), y.to(device)
+            preds = torch.argmax(m(x), dim=1)
+            predictions.extend(preds.cpu().numpy())
+            y_true.extend(y.cpu().numpy())
+            
+    accuracy = accuracy_score(y_true=np.array(y_true), y_pred=np.array(predictions))
+    logger.info(f"Model validation completed - Accuracy: {accuracy:.4f}")
+    
+    return accuracy
+
+def test(m, dl, device, logger=None):    
     logger.info("Starting model evaluation")
-    logger.debug(f"Using device: {device}")
     
     predictions = []
     y_true = []
@@ -190,13 +220,10 @@ def test(m, dl, device, logger=None):
     
     return accuracy
 
-
 def main():
     args = parse_arguments()
     
-    logger, log_dir = setup_logging(args.log_level)
-    
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    logger, log_dir, timestamp = setup_logging(args.log_level)
     
     logger.info("=" * 60)
     logger.info("MNIST MLP Training Started")
@@ -213,15 +240,15 @@ def main():
     np.random.seed(42)
 
 
-    traindl, testdl, trainset, testset = load_mnist_datasets(
+    traindl, valdl, testdl, trainset, valset, testset = load_mnist_datasets(
         batch_size_train=args.batch_size_train, 
-        batch_size_test=args.batch_size_test 
+        batch_size_test=args.batch_size_test
     )
 
     model = MLP(in_features=784, hidden_features=args.hidden_features, out_features=10)
     
     logger.info("Starting training phase...")
-    trained_model = train(model, traindl, args.epochs, args.lr, device, logger)
+    trained_model = train(model, traindl, device, args, logger, log_dir, timestamp)
     
     logger.info("Starting testing phase...")
     acc = test(trained_model, testdl, device, logger)
@@ -233,13 +260,6 @@ def main():
     logger.info("=" * 60)
     print(result_msg)
     
-    logger.info("Saving model checkpoint...")
-    model_path, config_path = save_model_checkpoint(
-        trained_model, args, acc, log_dir, timestamp, logger
-    )
-
-    print(f"Model checkpoint saved to: {model_path}")
-    print(f"Configuration saved to: {config_path}")
     
     model_info_path = os.path.join(log_dir, 'model_info.txt')
     with open(model_info_path, 'w') as f:
@@ -253,6 +273,5 @@ def main():
     
     logger.info(f"Model information saved to: {model_info_path}")
     
-
 if __name__ == '__main__':
     main()
