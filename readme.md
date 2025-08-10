@@ -86,3 +86,8 @@ TIPS:
 - To implement early stopping, we must have a validation set that we can test the model performance against.
 - Moreover, the training might converge well before the `max_epochs` value. We can implement early stopping in this case. 
 
+
+### Step 12: Experiment Tracking
+
+- This is the final point of discussion today. Suppose, we want to explore the performance of models across various sweeps such as batch size, or hidden feature dimension. Then we can use tensorboard to have all results at one place.
+- Once we have this, we can setup an experimental sweep such as `run_sweep.sh`
